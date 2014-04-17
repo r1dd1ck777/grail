@@ -3,23 +3,17 @@ this.gg = this.gg||{};
 
 (function() {
     "use strict";
-    var MapView = function(canvasId){
-        this.initialize();
-        this._init(canvasId);
+    var MapView = function(options){
+        this.initialize(options);
     }
     var p = MapView.prototype = new createjs.EventDispatcher();
-    MapView.mapStage = null;
+    p.EventDispatcher_initialize = p.initialize;
+    p.mapStage = null;
 
-    p._init = function(canvasId){
+    p.initialize = function(options){
         var mapView = this;
-        var mapStage = mapView.mapStage;
-
-        mapStage = new createjs.Stage(canvasId);
-
-        var mapContainer = gg.MapViewUtils.createMapContainer(mapView);
-
-        mapStage.addChild(mapContainer);
-        mapStage.enableMouseOver();
+        mapView.EventDispatcher_initialize();
+        mapView.mapStage = gg.MapViewUtils.createMapStage(mapView);
 
         var c = new createjs.Shape();
         c.graphics.beginFill("black").dc(0,0,8);
@@ -28,10 +22,12 @@ this.gg = this.gg||{};
         c.x = -1000;
         c.y = -1000;
 
+        var HALF_OF_CELL = parseInt(gg.Config.CELL_SIZE / 2);
         mapView.on(gg.Events.viewCellMouseClick , function(e){
-            var point = e.originalEvent.target.localToLocal(10,10, mapContainer);
+            var point = e.mouseEvent.target.localToLocal(HALF_OF_CELL, HALF_OF_CELL, mapContainer);
             c.x = point.x;
             c.y = point.y;
+            console.log(e);
         });
 
         jQuery(window).keydown(function(e){
@@ -46,10 +42,24 @@ this.gg = this.gg||{};
             }
         });
 
+        mapStage.on("pressmove",function(evt) {
+            mapContainer.x = mapContainer.lastPoint.x + (evt.stageX - mapContainer.lastMousedownPoint.x);
+            mapContainer.y = mapContainer.lastPoint.y + (evt.stageY - mapContainer.lastMousedownPoint.y);
+        });
+        mapContainer.on("mousedown",function(evt) {
+            mapContainer.lastMousedownPoint = {
+                x: evt.stageX, y: evt.stageY
+            }
+            mapContainer.lastPoint = {
+                x: mapContainer.x, y: mapContainer.y
+            }
+        });
+
         createjs.Ticker.addEventListener("tick", mapStage);
+        createjs.Ticker.setFPS(50);
     }
 
-    p.moveMap = function(){
+    p.moveMapTo = function(x, y){
 
     };
 

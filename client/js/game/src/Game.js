@@ -3,9 +3,10 @@ this.gg = this.gg||{};
 
 (function() {
     "use strict";
-    var Game = function(mapCanvasId){
+    var Game = function(options){
         var game = this;
-        game.view.mapView = new gg.MapView(mapCanvasId);
+        game.options = options;
+        game.view.mapView = new gg.MapView(options);
     }
 
     var p = Game.prototype;
