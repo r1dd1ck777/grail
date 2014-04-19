@@ -10,7 +10,7 @@ angular.module('game', [])
     $(document).ready(function(){
         var loadQueue = new createjs.LoadQueue();
         loadQueue.on("complete", function(){
-            gg.loadQueue = loadQueue;
+            gg.resources = loadQueue;
             var game = new gg.Game({
                 mapCanvasId: 'map-canvas'
             });
