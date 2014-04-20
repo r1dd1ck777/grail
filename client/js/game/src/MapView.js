@@ -27,19 +27,6 @@ this.gg = this.gg||{};
 //                mapStage.x += 3;
 //            }
 //        });
-//
-//        mapStage.on("pressmove",function(evt) {
-//            mapContainer.x = mapContainer.lastPoint.x + (evt.stageX - mapContainer.lastMousedownPoint.x);
-//            mapContainer.y = mapContainer.lastPoint.y + (evt.stageY - mapContainer.lastMousedownPoint.y);
-//        });
-//        mapContainer.on("mousedown",function(evt) {
-//            mapContainer.lastMousedownPoint = {
-//                x: evt.stageX, y: evt.stageY
-//            }
-//            mapContainer.lastPoint = {
-//                x: mapContainer.x, y: mapContainer.y
-//            }
-//        });
 
         createjs.Ticker.addEventListener("tick", mapView.mapStage);
         createjs.Ticker.setFPS(50);

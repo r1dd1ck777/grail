@@ -35,6 +35,42 @@ this.gg = this.gg||{};
         // layer 5 - effects
         // layer 6 - fog of war
 
+        // DRAG events
+        mapContainer.isDragging = false;
+        mapContainer.on('mousedown', function(e){
+            if (e.nativeEvent.button == 1){
+                mapContainer.dragStartPoint = {
+                    x: e.stageX,
+                    y: e.stageY
+                }
+                mapContainer.lastPoint = {
+                    x: mapContainer.x,
+                    y: mapContainer.y
+                }
+                mapContainer.isDragging = true;
+
+                var newE = new createjs.Event(gg.ViewEvents.MAP_MOUSE_DRAG_START);
+                mapContainer.dispatchEvent(newE);
+            }
+        });
+        mapContainer.on('pressup', function(e){
+            if (e.nativeEvent.button == 1){
+                mapContainer.isDragging = false;
+
+                var newE = new createjs.Event(gg.ViewEvents.MAP_MOUSE_DRAG_STOP);
+                mapContainer.dispatchEvent(newE);
+            }
+        });
+        mapContainer.on('pressmove', function(e){
+            if (mapContainer.isDragging){
+                mapContainer.x = mapContainer.lastPoint.x + (e.stageX - mapContainer.dragStartPoint.x);
+                mapContainer.y = mapContainer.lastPoint.y + (e.stageY - mapContainer.dragStartPoint.y);
+
+                var newE = new createjs.Event(gg.ViewEvents.MAP_MOUSE_DRAG);
+                mapContainer.dispatchEvent(newE);
+            }
+        });
+
         return mapContainer;
     }
 
