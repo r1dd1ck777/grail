@@ -19,8 +19,6 @@ angular.module('game', [])
             {id: "grass", src:"images/terrain/grass.jpg"}
         ]);
         $('body').on('contextmenu', 'canvas', function(e){
-            console.log('contextmenu');
-            console.log(e);
             return false;
         });
 //        $('body').on('click', 'canvas', function(e){

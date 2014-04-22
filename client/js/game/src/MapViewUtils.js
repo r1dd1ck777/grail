@@ -76,22 +76,30 @@ this.gg = this.gg||{};
 
     MapViewUtils.createCursorContainer = function(){
         var container = new createjs.Container();
+
         var targetCursor = new createjs.Shape();
         targetCursor.graphics.beginFill("black").dc(0,0,8);
         container.addChild(targetCursor);
         targetCursor.scaleX = 1.5;
         targetCursor.x = -1000;
         targetCursor.y = -1000;
-
-//        var HALF_OF_CELL = parseInt(gg.Config.CELL_SIZE / 2);
-//        mapView.on(gg.Events.viewCellMouseClick , function(e){
-//            var point = e.mouseEvent.target.localToLocal(HALF_OF_CELL, HALF_OF_CELL, mapCellsContainer);
-//            targetCursor.x = point.x;
-//            targetCursor.y = point.y;
-//            console.log(e);
-//        });
-
         container.targetCursor = targetCursor;
+
+        var overCursor = new createjs.Shape();
+        overCursor.graphics.beginFill("green").dc(0,0,8);
+        container.addChild(overCursor);
+        overCursor.scaleX = 1.5;
+        overCursor.x = -1000;
+        overCursor.y = -1000;
+        container.overCursor = overCursor;
+
+        var selectCursor = new createjs.Shape();
+        selectCursor.graphics.beginFill("red").dc(0,0,8);
+        container.addChild(selectCursor);
+        selectCursor.scaleX = 1.5;
+        selectCursor.x = -1000;
+        selectCursor.y = -1000;
+        container.selectCursor = selectCursor;
 
         return container;
     }
@@ -136,23 +144,6 @@ this.gg = this.gg||{};
             for(var j in cellsMatrix[i]){
                 container.addChild(cellsMatrix[i][j]);
             }
-//            mapCell.on("mouseover", function(evt) {
-//                var e = new createjs.Event(gg.Events.viewCellMouseOver);
-//                e.mouseEvent = evt;
-//                mapView.dispatchEvent(e);
-//            });
-//            mapCell.on("click", function(evt) {
-//                var e = new createjs.Event(gg.Events.viewCellMouseClick);
-//                e.mouseEvent = evt;
-//                mapView.dispatchEvent(e);
-//            });
-//            mapCell.on("mouseout", function(evt) {
-//                var e = new createjs.Event(gg.Events.viewCellMouseOut);
-//                e.mouseEvent = evt;
-//                mapView.dispatchEvent(e);
-//            });
-
-
         }
         container.rotation = 45;
         container.cellsMatrix = cellsMatrix;
