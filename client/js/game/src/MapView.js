@@ -76,6 +76,32 @@ this.gg = this.gg||{};
             var point = e.cellView.localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, mapView.mapStage.mapContainer);
             targetCursor.x = point.x;
             targetCursor.y = point.y;
+
+            // path
+            var cells = mapView.mapStage.mapContainer.terrainContainer.grid.cellsMatrix;
+            var graphCells = [];
+            for (var i in cells){
+                if (graphCells[i] == undefined) {graphCells[i] = []}
+                for (var j in cells[i]){
+                    graphCells[i][j] = cells[i][j].viewData.passVal;
+                }
+            }
+            console.log(graphCells);
+            var graph = new gg.Graph(graphCells);
+            var start = graph.nodes[0][0];
+            var end = graph.nodes[e.cellView.viewData.coords.x][e.cellView.viewData.coords.y];
+            var result = gg.Graph.astar.search(graph.nodes, start, end);
+            console.log(result);
+            var mapCursorContainer = mapView.mapStage.mapContainer.mapCursorContainer;
+            for (var k in result){
+                var pos = mapView.getCellViewCenter(result[k].x, result[k].y, mapCursorContainer);
+                var flag = new createjs.Shape();
+                flag.graphics.beginFill("red").dc(0,0,2);
+                flag.x = pos.x;
+                flag.y = pos.y;
+                mapCursorContainer.addChild(flag);
+                console.log(result[k].x, result[k].y);
+            }
         });
 
         var overCursor = mapView.mapStage.mapContainer.mapCursorContainer.selectCursor;
@@ -128,6 +154,10 @@ this.gg = this.gg||{};
         }
 
         return this.getCellView(coords.x, coords.y);
+    }
+
+    p.getCellViewCenter = function(x,y, target){
+        return this.getCellView(x,y).localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, target);
     }
 
     gg.MapView = MapView;

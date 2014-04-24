@@ -21,6 +21,8 @@ angular.module('game', [])
         $('body').on('contextmenu', 'canvas', function(e){
             return false;
         });
+
+
 //        $('body').on('click', 'canvas', function(e){
 //            console.log('click');
 //            console.log(e);
