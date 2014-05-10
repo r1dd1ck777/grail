@@ -1,8 +1,9 @@
+"use strict";
+
 // namespace:
 this.gg = this.gg||{};
 
 (function() {
-    "use strict";
     var MapViewUtils = function(){
     }
     MapViewUtils.createMapStage = function(mapCanvasId){
@@ -27,13 +28,17 @@ this.gg = this.gg||{};
         mapContainer.terrainContainer = terrainContainer;
         mapContainer.addChild(terrainContainer);
         // layer 2 - map decor (trees, towns, items (?) )
-        // layer 3 - cursor, flags
+        // layer 3 - cursor
         var mapCursorContainer = gg.MapViewUtils.createCursorContainer();
         mapContainer.mapCursorContainer = mapCursorContainer;
         mapContainer.addChild(mapCursorContainer);
-        // layer 4 - units
-        // layer 5 - effects
-        // layer 6 - fog of war
+        // layer 4 - flags
+        var mapFlagsContainer = new createjs.Container();
+        mapContainer.mapFlagsContainer = mapFlagsContainer;
+        mapContainer.addChild(mapFlagsContainer);
+        // layer 5 - units
+        // layer 6 - effects
+        // layer 7 - fog of war
 
         // DRAG events
         mapContainer.isDragging = false;
@@ -77,12 +82,15 @@ this.gg = this.gg||{};
     MapViewUtils.createCursorContainer = function(){
         var container = new createjs.Container();
 
-        var targetCursor = new createjs.Shape();
-        targetCursor.graphics.beginFill("black").dc(0,0,8);
-        container.addChild(targetCursor);
+        var targetCursor = new createjs.Container();
+        var t = new createjs.Bitmap(gg.resources.getResult('target'));
+        t.x = -20;
+        t.y = -20;
         targetCursor.scaleX = 1.5;
         targetCursor.x = -1000;
         targetCursor.y = -1000;
+        targetCursor.addChild(t);
+        container.addChild(targetCursor);
         container.targetCursor = targetCursor;
 
         var overCursor = new createjs.Shape();
@@ -94,7 +102,7 @@ this.gg = this.gg||{};
         container.overCursor = overCursor;
 
         var selectCursor = new createjs.Shape();
-        selectCursor.graphics.beginFill("red").dc(0,0,8);
+        selectCursor.graphics.beginFill("blue").dc(0,0,8);
         container.addChild(selectCursor);
         selectCursor.scaleX = 1.5;
         selectCursor.x = -1000;

@@ -8,22 +8,26 @@ this.gg = this.gg||{};
     }
     var p = MapView.prototype = new createjs.EventDispatcher();
     p.EventDispatcher_initialize = p.initialize;
-    p.mapStage = null;
+    p.mapStage = null
+    p._selectedCell = null;
+    p._targetedCell = null;
+    p._pathFinder = null;
     p._mouseInterval = null;
+
 
     p.initialize = function(options){
         var mapView = this;
         mapView.EventDispatcher_initialize();
         mapView.options = options;
         mapView.mapStage = gg.MapViewUtils.createMapStage(mapView.options.mapCanvasId);
-
-        mapView.selectedCell = new createjs.Point(1,1);
-        mapView.targetedCell = new createjs.Point(1,2);
+        mapView._initPathFinder();
+        mapView._setSelected(0,0);
+        mapView._setTargeted(1,1);
 
         // cell events
         var _currentMouseCell = null, _oldMouseCell = null;
         mapView._mouseInterval = setInterval(function(){
-            _currentMouseCell = mapView.getCellViewUnder(mapView.mapStage.mouseX, mapView.mapStage.mouseY);
+            _currentMouseCell = mapView._getCellViewUnder(mapView.mapStage.mouseX, mapView.mapStage.mouseY);
             if (_currentMouseCell === _oldMouseCell){
                 return;
             }
@@ -44,21 +48,15 @@ this.gg = this.gg||{};
         }, 50);
 
         mapView.mapStage.on('click', function(e){
-            if (e.nativeEvent.button == 1){
+            if (e.nativeEvent.button != 0){
                 return;
             }
-            var cellView = mapView.getCellViewUnder(e.stageX, e.stageY);
+            var cellView = mapView._getCellViewUnder(e.stageX, e.stageY);
             if (!Boolean(cellView)){
                 return;
             }
-            if (e.nativeEvent.button == 2){
-                var newE = new createjs.Event(gg.ViewEvents.CELL_MOUSE_OPEN_CONTEXT);
-                newE.cellView = cellView;
-                mapView.dispatchEvent(newE);
-            }
             if (e.nativeEvent.button == 0){
-                if (!mapView.targetedCell.equals(cellView.viewData.coords) && !mapView.selectedCell.equals(cellView.viewData.coords)){
-                    mapView.targetedCell = cellView.viewData.coords;
+                if (!mapView._targetedCell.equals(cellView.viewData.coords) && !mapView._selectedCell.equals(cellView.viewData.coords)){
                     var newE = new createjs.Event(gg.ViewEvents.CELL_MOUSE_CHANGE_TARGET);
                     newE.cellView = cellView;
                     mapView.dispatchEvent(newE);
@@ -66,47 +64,26 @@ this.gg = this.gg||{};
             }
         });
 
+        mapView.mapStage.on('mousedown', function(e){
+            if (e.nativeEvent.button != 2){
+                return;
+            }
+            var cellView = mapView._getCellViewUnder(e.stageX, e.stageY);
+            if (!Boolean(cellView)){
+                return;
+            }
+            var newE = new createjs.Event(gg.ViewEvents.CELL_MOUSE_OPEN_CONTEXT);
+            newE.cellView = cellView;
+            mapView.dispatchEvent(newE);
+        });
+
         // mapView events
-        mapView.on(gg.ViewEvents.CELL_MOUSE_OPEN_CONTEXT, function(e){
-        });
-
-        var targetCursor = mapView.mapStage.mapContainer.mapCursorContainer.targetCursor;
         mapView.on(gg.ViewEvents.CELL_MOUSE_CHANGE_TARGET, function(e){
-//            console.log(e);
-            var point = e.cellView.localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, mapView.mapStage.mapContainer);
-            targetCursor.x = point.x;
-            targetCursor.y = point.y;
-
-            // path
-            var cells = mapView.mapStage.mapContainer.terrainContainer.grid.cellsMatrix;
-            var graphCells = [];
-            for (var i in cells){
-                if (graphCells[i] == undefined) {graphCells[i] = []}
-                for (var j in cells[i]){
-                    graphCells[i][j] = cells[i][j].viewData.passVal;
-                }
-            }
-            console.log(graphCells);
-            var graph = new gg.Graph(graphCells);
-            var start = graph.nodes[0][0];
-            var end = graph.nodes[e.cellView.viewData.coords.x][e.cellView.viewData.coords.y];
-            var result = gg.Graph.astar.search(graph.nodes, start, end);
-            console.log(result);
-            var mapCursorContainer = mapView.mapStage.mapContainer.mapCursorContainer;
-            for (var k in result){
-                var pos = mapView.getCellViewCenter(result[k].x, result[k].y, mapCursorContainer);
-                var flag = new createjs.Shape();
-                flag.graphics.beginFill("red").dc(0,0,2);
-                flag.x = pos.x;
-                flag.y = pos.y;
-                mapCursorContainer.addChild(flag);
-                console.log(result[k].x, result[k].y);
-            }
+            mapView._setTargeted(e.cellView.viewData.coords.x, e.cellView.viewData.coords.y);
         });
 
-        var overCursor = mapView.mapStage.mapContainer.mapCursorContainer.selectCursor;
+        var overCursor = mapView.mapStage.mapContainer.mapCursorContainer.overCursor;
         mapView.on(gg.ViewEvents.CELL_MOUSE_OVER , function(e){
-//            console.log(e);
             var point = e.cellView.localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, mapView.mapStage.mapContainer);
             overCursor.x = point.x;
             overCursor.y = point.y;
@@ -134,30 +111,75 @@ this.gg = this.gg||{};
         });
 
         createjs.Ticker.addEventListener("tick", mapView.mapStage);
-        createjs.Ticker.setFPS(50);
+        createjs.Ticker.setFPS(24);
     }
 
+    p._initPathFinder = function(){
+        this._pathFinder = new gg.MapViewPathFinder(this._getCellsMatrix());
+    }
     // get cell by position on map
-    p.getCellView = function(x,y){
+    p._getCellView = function(x,y){
         return this.mapStage.mapContainer.terrainContainer.grid.cellsMatrix[x][y];
     }
 
     // get cell under mouse
-    p.getCellViewUnder = function(x,y){
+    p._getCellViewUnder = function(x,y){
         var point = this.mapStage.mapContainer.terrainContainer.grid.globalToLocal(x, y);
         var coords = new createjs.Point(
             Math.floor(point.x / gg.Config.CELL_SIZE) +1,
             Math.floor(point.y / gg.Config.CELL_SIZE) +1
         );
-        if (coords.x <=0 || coords.y <= 0){
+        if (coords.x < 0 || coords.y < 0){
             return null;
         }
 
-        return this.getCellView(coords.x, coords.y);
+        return this._getCellView(coords.x, coords.y);
     }
 
-    p.getCellViewCenter = function(x,y, target){
-        return this.getCellView(x,y).localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, target);
+    p._getCellViewCenter = function(x,y, target){
+        return this._getCellView(x,y).localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, target);
+    }
+    
+    p._getCellsMatrix = function(){
+        return this.mapStage.mapContainer.terrainContainer.grid.cellsMatrix
+    }
+
+    p._drawPathFlags = function(sX, sY, eX, eY){
+        var mapView = this;
+        var result = mapView._pathFinder.getPath(sX, sY, eX, eY);
+        var mapFlagsContainer = mapView.mapStage.mapContainer.mapFlagsContainer;
+        mapFlagsContainer.removeAllChildren();
+        for (var k in result){
+            var pos = mapView._getCellViewCenter(result[k].x, result[k].y, mapFlagsContainer);
+            var flag = new createjs.Shape();
+            flag.graphics.beginFill("blue").dc(0,0,2);
+            flag.x = pos.x;
+            flag.y = pos.y;
+            mapFlagsContainer.addChild(flag);
+            console.log(result[k].x, result[k].y);
+        }
+    }
+
+    p._setTargeted = function(x,y){
+        var cellView = this._getCellView(x,y);
+        this._targetedCell = new createjs.Point(x,y);
+
+        var targetCursor = this.mapStage.mapContainer.mapCursorContainer.targetCursor;
+        var point = cellView.localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, this.mapStage.mapContainer);
+        targetCursor.x = point.x;
+        targetCursor.y = point.y;
+
+        this._drawPathFlags(this._selectedCell.x, this._selectedCell.y, x, y);
+    }
+
+    p._setSelected = function(x,y){
+        var cellView = this._getCellView(x,y);
+        this._selectedCell = new createjs.Point(x,y);
+
+        var selectedCursor = this.mapStage.mapContainer.mapCursorContainer.selectCursor;
+        var point = cellView.localToLocal(gg.Config.CELL_SIZE_HALF, gg.Config.CELL_SIZE_HALF, this.mapStage.mapContainer);
+        selectedCursor.x = point.x;
+        selectedCursor.y = point.y;
     }
 
     gg.MapView = MapView;

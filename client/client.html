@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app2="grail-game">
 <head>
     <title></title>
     <script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
@@ -7,7 +7,8 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.10/angular.min.js"></script>
     <script src="http://code.createjs.com/createjs-2013.12.12.min.js"></script>
 
-    <script src="js/game/src/Finder.js"></script>
+    <script src="js/game/src/MapViewPathFinder.js"></script>
+    <script src="js/game/src/MapViewPath.js"></script>
     <script src="js/game/src/Config.js"></script>
     <script src="js/game/src/ViewEvents.js"></script>
     <script src="js/game/src/ModelEvents.js"></script>
@@ -21,11 +22,11 @@
 
     <script src="js/game.js"></script>
 </head>
-<body>
-
+<body ng-controller="grailGame">
 <canvas id="map-canvas" width="500" height="500" style="border: 1px solid #000">
     alternate content
 </canvas>
+<div ng-show="contextHelp.isVisible">contextHelp.isVisible</div>
 
 </body>
 </html>
